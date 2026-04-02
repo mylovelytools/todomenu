@@ -1,6 +1,10 @@
 import AppKit
 import SwiftUI
 
+enum MenuBarFocusField: Hashable {
+    case title
+}
+
 struct MenuBarView: View {
     @StateObject private var viewModel = TodoListViewModel()
 
@@ -8,6 +12,7 @@ struct MenuBarView: View {
     @State private var newNotes: String = ""
     @State private var editingTodo: Todo?
     @State private var showingClearAllConfirmation = false
+    @FocusState private var focusedField: MenuBarFocusField?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -104,7 +109,7 @@ struct MenuBarView: View {
                     .background(.quaternary.opacity(0.25), in: RoundedRectangle(cornerRadius: 8))
                 }
                 
-                AddTaskInputView(title: $newTitle, notes: $newNotes, onAdd: addTodo)
+                AddTaskInputView(title: $newTitle, notes: $newNotes, focusedField: $focusedField, onAdd: addTodo)
 
                 Divider()
 
@@ -155,6 +160,11 @@ struct MenuBarView: View {
         .padding(10)
         .frame(width: 400)
         .onExitCommand(perform: hideMenuBarWindow)
+        .onAppear {
+            DispatchQueue.main.async {
+                focusedField = .title
+            }
+        }
     }
 
     private func hideMenuBarWindow() {
@@ -175,6 +185,7 @@ struct MenuBarView: View {
 struct AddTaskInputView: View {
     @Binding var title: String
     @Binding var notes: String
+    @FocusState.Binding var focusedField: MenuBarFocusField?
     let onAdd: () -> Void
 
     var body: some View {
@@ -182,6 +193,7 @@ struct AddTaskInputView: View {
             VStack(alignment: .trailing, spacing: 4) {
                 TextField("Add a new task...", text: $title, axis: .vertical)
                     .lineLimit(2...4)
+                    .focused($focusedField, equals: .title)
                     .textFieldStyle(.plain)
                     .padding(8)
                     .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 8))
