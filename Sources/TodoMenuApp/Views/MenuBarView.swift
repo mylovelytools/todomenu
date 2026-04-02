@@ -57,7 +57,11 @@ struct MenuBarView: View {
                                 TodoRowView(
                                     todo: todo,
                                     onToggle: { viewModel.toggleCompletion(id: todo.id) },
-                                    onEdit: { editingTodo = todo },
+                                    onEdit: {
+                                        if !todo.isCompleted {
+                                            editingTodo = todo
+                                        }
+                                    },
                                     onDelete: { viewModel.deleteTodo(id: todo.id) }
                                 )
                             }
@@ -333,9 +337,11 @@ struct TodoRowView: View {
                 Button(action: onEdit) {
                     Image(systemName: "pencil")
                         .font(.body)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(todo.isCompleted ? .tertiary : .secondary)
                 }
                 .buttonStyle(.plain)
+                .disabled(todo.isCompleted)
+                .opacity(todo.isCompleted ? 0.45 : 1)
 
                 if showingDeleteConfirmation {
                     HStack(spacing: 6) {
