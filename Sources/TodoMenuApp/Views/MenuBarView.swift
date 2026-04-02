@@ -282,6 +282,8 @@ struct TodoRowView: View {
     let onEdit: () -> Void
     let onDelete: () -> Void
 
+    @State private var showingDeleteConfirmation = false
+
     private var timestampText: String {
         var components: [String] = ["Created \(todo.createdAt.formatted(date: .abbreviated, time: .shortened))"]
 
@@ -335,12 +337,27 @@ struct TodoRowView: View {
                 }
                 .buttonStyle(.plain)
 
-                Button(action: onDelete) {
-                    Image(systemName: "trash")
-                        .font(.body)
+                if showingDeleteConfirmation {
+                    HStack(spacing: 6) {
+                        Button("Delete") {
+                            onDelete()
+                            showingDeleteConfirmation = false
+                        }
                         .foregroundStyle(.red)
+
+                        Button("Cancel") {
+                            showingDeleteConfirmation = false
+                        }
+                    }
+                    .font(.caption2)
+                } else {
+                    Button(action: { showingDeleteConfirmation = true }) {
+                        Image(systemName: "trash")
+                            .font(.body)
+                            .foregroundStyle(.red)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
         }
         .padding(6)
