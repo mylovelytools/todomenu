@@ -154,6 +154,11 @@ struct MenuBarView: View {
         }
         .padding(10)
         .frame(width: 400)
+        .onExitCommand(perform: hideMenuBarWindow)
+    }
+
+    private func hideMenuBarWindow() {
+        NSApp.keyWindow?.orderOut(nil)
     }
 
     private func addTodo() {
