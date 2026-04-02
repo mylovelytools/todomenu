@@ -7,7 +7,7 @@ struct MenuBarView: View {
     @State private var newTitle: String = ""
     @State private var newNotes: String = ""
     @State private var editingTodo: Todo?
-    @State private var isConfirmingClear = false
+    @State private var showingClearAllConfirmation = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -71,6 +71,34 @@ struct MenuBarView: View {
                 }
 
                 Divider()
+
+                if showingClearAllConfirmation {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Clear all tasks?")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+
+                        Text("This will permanently delete all tasks.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+
+                        HStack(spacing: 8) {
+                            Button("Clear All") {
+                                viewModel.deleteAllTodos()
+                                showingClearAllConfirmation = false
+                            }
+                            .foregroundStyle(.red)
+
+                            Button("Cancel") {
+                                showingClearAllConfirmation = false
+                            }
+                        }
+                        .font(.caption)
+                    }
+                    .padding(10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.quaternary.opacity(0.25), in: RoundedRectangle(cornerRadius: 8))
+                }
                 
                 AddTaskInputView(title: $newTitle, notes: $newNotes, onAdd: addTodo)
 
@@ -78,29 +106,30 @@ struct MenuBarView: View {
 
                 HStack {
                     Button(action: addTodo) {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title2)
-                            .foregroundStyle(.blue)
+                        ZStack {
+                            Circle()
+                                .fill(Color.blue.opacity(0.18))
+                                .frame(width: 40, height: 40)
+
+                            Circle()
+                                .fill(Color.blue)
+                                .frame(width: 28, height: 28)
+
+                            Image(systemName: "plus")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(.white)
+                        }
                     }
                     .buttonStyle(.plain)
+                    .frame(width: 40, height: 40)
                     .keyboardShortcut(.defaultAction)
 
                     Spacer()
 
                     HStack(spacing: 12) {
-                        if isConfirmingClear {
-                            Button("Confirm Clear") {
-                                viewModel.deleteAllTodos()
-                                isConfirmingClear = false
-                            }
-                            .foregroundStyle(.red)
-                            
-                            Button("Cancel") {
-                                isConfirmingClear = false
-                            }
-                        } else if !viewModel.todos.isEmpty {
+                        if !viewModel.todos.isEmpty {
                             Button("Clear All") {
-                                isConfirmingClear = true
+                                showingClearAllConfirmation = true
                             }
                             .foregroundStyle(.red.opacity(0.8))
                         }
@@ -161,15 +190,17 @@ struct AddTaskInputView: View {
                 }
             }
 
-            VStack(alignment: .trailing, spacing: 4) {
+            VStack(alignment: .trailing, spacing: 7) {
                 NSTextFieldWrapper(text: $notes, placeholder: "Notes (optional)", isMultiline: false, onSubmit: onAdd)
                     .frame(height: 22)
+                    .padding(.bottom, notes.count > 255 ? 3 : 0)
                 
                 if notes.count > 255 {
                     Text("\(notes.count)/255 - Max length reached")
                         .font(.caption2)
                         .fontWeight(.medium)
                         .foregroundStyle(.red)
+                        .padding(.top, 2)
                         .padding(.trailing, 4)
                         .padding(.bottom, 2)
                 }
