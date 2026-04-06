@@ -10,6 +10,9 @@ let package = Package(
     products: [
         .executable(name: "TodoMenuApp", targets: ["TodoMenuApp"])
     ],
+    dependencies: [
+        .package(url: "https://github.com/swiftlang/swift-testing.git", from: "0.7.0")
+    ],
     targets: [
         .executableTarget(
             name: "TodoMenuApp",
@@ -17,7 +20,10 @@ let package = Package(
         ),
         .testTarget(
             name: "TodoMenuAppTests",
-            dependencies: ["TodoMenuApp"],
+            dependencies: [
+                "TodoMenuApp",
+                .product(name: "Testing", package: "swift-testing")
+            ],
             path: "Tests/TodoMenuAppTests"
         )
     ]

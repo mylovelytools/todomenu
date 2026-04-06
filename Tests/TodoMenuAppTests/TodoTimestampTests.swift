@@ -1,47 +1,46 @@
-import XCTest
+import Foundation
+import Testing
 @testable import TodoMenuApp
 
-final class TodoTimestampTests: XCTestCase {
-    func testAddSetsCreatedAndEditedAndNilCompleted() throws {
-        let now = Date(timeIntervalSince1970: 1_700_000_000)
-        let todo = try Todo.makeNew(title: "Task", notes: "", now: now)
+@Test func addSetsCreatedAndEditedAndNilCompleted() throws {
+    let now = Date(timeIntervalSince1970: 1_700_000_000)
+    let todo = try Todo.makeNew(title: "Task", notes: "", now: now)
 
-        XCTAssertEqual(todo.createdAt, now)
-        XCTAssertEqual(todo.editedAt, now)
-        XCTAssertNil(todo.completedAt)
-        XCTAssertFalse(todo.isCompleted)
-    }
+    #expect(todo.createdAt == now)
+    #expect(todo.editedAt == now)
+    #expect(todo.completedAt == nil)
+    #expect(todo.isCompleted == false)
+}
 
-    func testEditUpdatesOnlyEditedTimestamp() throws {
-        let created = Date(timeIntervalSince1970: 1_700_000_000)
-        var todo = try Todo.makeNew(title: "Task", notes: "note", now: created)
-        let editTime = created.addingTimeInterval(300)
+@Test func editUpdatesOnlyEditedTimestamp() throws {
+    let created = Date(timeIntervalSince1970: 1_700_000_000)
+    var todo = try Todo.makeNew(title: "Task", notes: "note", now: created)
+    let editTime = created.addingTimeInterval(300)
 
-        try todo.update(title: "Task 2", notes: "note 2", now: editTime)
+    try todo.update(title: "Task 2", notes: "note 2", now: editTime)
 
-        XCTAssertEqual(todo.title, "Task 2")
-        XCTAssertEqual(todo.notes, "note 2")
-        XCTAssertEqual(todo.createdAt, created)
-        XCTAssertEqual(todo.editedAt, editTime)
-        XCTAssertNil(todo.completedAt)
-    }
+    #expect(todo.title == "Task 2")
+    #expect(todo.notes == "note 2")
+    #expect(todo.createdAt == created)
+    #expect(todo.editedAt == editTime)
+    #expect(todo.completedAt == nil)
+}
 
-    func testCompleteAndIncompleteTransitions() throws {
-        let created = Date(timeIntervalSince1970: 1_700_000_000)
-        var todo = try Todo.makeNew(title: "Task", notes: "", now: created)
+@Test func completeAndIncompleteTransitions() throws {
+    let created = Date(timeIntervalSince1970: 1_700_000_000)
+    var todo = try Todo.makeNew(title: "Task", notes: "", now: created)
 
-        let completedAt = created.addingTimeInterval(120)
-        todo.setCompleted(true, now: completedAt)
+    let completedAt = created.addingTimeInterval(120)
+    todo.setCompleted(true, now: completedAt)
 
-        XCTAssertTrue(todo.isCompleted)
-        XCTAssertEqual(todo.completedAt, completedAt)
-        XCTAssertEqual(todo.editedAt, completedAt)
+    #expect(todo.isCompleted == true)
+    #expect(todo.completedAt == completedAt)
+    #expect(todo.editedAt == completedAt)
 
-        let incompleteAt = created.addingTimeInterval(240)
-        todo.setCompleted(false, now: incompleteAt)
+    let incompleteAt = created.addingTimeInterval(240)
+    todo.setCompleted(false, now: incompleteAt)
 
-        XCTAssertFalse(todo.isCompleted)
-        XCTAssertNil(todo.completedAt)
-        XCTAssertEqual(todo.editedAt, incompleteAt)
-    }
+    #expect(todo.isCompleted == false)
+    #expect(todo.completedAt == nil)
+    #expect(todo.editedAt == incompleteAt)
 }
