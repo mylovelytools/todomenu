@@ -3,6 +3,7 @@ import Foundation
 @MainActor
 final class TodoListViewModel: ObservableObject {
     @Published private(set) var todos: [Todo] = []
+    @Published var searchText: String = ""
     @Published var errorMessage: String?
     @Published var lastImportCount: Int = 0
 
@@ -11,6 +12,10 @@ final class TodoListViewModel: ObservableObject {
     init(store: TodoStore = TodoStore()) {
         self.store = store
         load()
+    }
+
+    var filteredTodos: [Todo] {
+        todos.filter { $0.matchesSearchQuery(searchText) }
     }
 
     func load() {

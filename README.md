@@ -6,6 +6,7 @@ A sleek, lightweight macOS menu bar application for managing your personal tasks
 
 - **Always Accessible**: Resides in your macOS menu bar for quick task entry and management.
 - **Rich Tasks**: Supports titles and optional notes for each task.
+- **Fast Search**: Filter tasks by description or notes from the menu bar.
 - **In-Place Editing**: Edit your tasks directly within the menu bar view without losing focus.
 - **Robust Local Storage**: Your tasks are securely persisted in the macOS Application Support directory using atomic JSON writes.
 - **Import/Export**: Easily backup or sync your tasks via JSON files.

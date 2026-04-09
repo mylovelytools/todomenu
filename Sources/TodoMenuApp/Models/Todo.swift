@@ -64,6 +64,17 @@ struct Todo: Identifiable, Codable, Equatable {
         completedAt = completed ? now : nil
     }
 
+    func matchesSearchQuery(_ query: String) -> Bool {
+        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !trimmedQuery.isEmpty else {
+            return true
+        }
+
+        return title.localizedCaseInsensitiveContains(trimmedQuery)
+            || notes.localizedCaseInsensitiveContains(trimmedQuery)
+    }
+
     func validate() -> [TodoValidationError] {
         var errors: [TodoValidationError] = []
 

@@ -44,6 +44,15 @@ struct MenuBarView: View {
 
             Divider()
 
+            TextField("Search tasks or notes", text: $viewModel.searchText)
+                .textFieldStyle(.plain)
+                .padding(8)
+                .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 8))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(.blue.opacity(0.25), lineWidth: 1)
+                )
+
             if let todoToEdit = editingTodo {
                 EditTodoView(todo: todoToEdit, onCancel: { editingTodo = nil }) { updatedTitle, updatedNotes in
                     viewModel.updateTodo(id: todoToEdit.id, title: updatedTitle, notes: updatedNotes)
@@ -55,10 +64,15 @@ struct MenuBarView: View {
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .frame(height: 60)
+                } else if viewModel.filteredTodos.isEmpty {
+                    Text("No matching tasks")
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(height: 60)
                 } else {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 6) {
-                            ForEach(viewModel.todos) { todo in
+                            ForEach(viewModel.filteredTodos) { todo in
                                 TodoRowView(
                                     todo: todo,
                                     onToggle: { viewModel.toggleCompletion(id: todo.id) },
@@ -75,7 +89,7 @@ struct MenuBarView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .frame(minHeight: CGFloat(min(viewModel.todos.count, 3) * 80), maxHeight: 300)
+                    .frame(minHeight: CGFloat(min(viewModel.filteredTodos.count, 3) * 80), maxHeight: 300)
                     .layoutPriority(1)
                 }
 
@@ -160,11 +174,6 @@ struct MenuBarView: View {
         .padding(10)
         .frame(width: 400)
         .onExitCommand(perform: hideMenuBarWindow)
-        .onAppear {
-            DispatchQueue.main.async {
-                focusedField = .title
-            }
-        }
     }
 
     private func hideMenuBarWindow() {
