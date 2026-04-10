@@ -13,6 +13,8 @@ struct MenuBarView: View {
     @State private var editingTodo: Todo?
     @State private var showingClearAllConfirmation = false
     @FocusState private var focusedField: MenuBarFocusField?
+    @State private var localMouseMonitor: Any?
+    @State private var localKeyMonitor: Any?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -173,11 +175,84 @@ struct MenuBarView: View {
         }
         .padding(10)
         .frame(width: 400)
-        .onExitCommand(perform: hideMenuBarWindow)
+        .onExitCommand(perform: handleEscapeAction)
+        .onAppear(perform: installFocusEventMonitors)
+        .onDisappear(perform: removeFocusEventMonitors)
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) { _ in
+            clearInputFocus()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didMiniaturizeNotification)) { _ in
+            clearInputFocus()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in
+            clearInputFocus()
+        }
     }
 
     private func hideMenuBarWindow() {
         NSApp.keyWindow?.orderOut(nil)
+    }
+
+    private func handleEscapeAction() {
+        clearInputFocus()
+        hideMenuBarWindow()
+    }
+
+    private func clearInputFocus() {
+        focusedField = nil
+        NSApp.keyWindow?.makeFirstResponder(nil)
+    }
+
+    private func installFocusEventMonitors() {
+        removeFocusEventMonitors()
+
+        localMouseMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { event in
+            guard let window = NSApp.keyWindow, event.window === window else {
+                return event
+            }
+
+            let clickLocation = window.contentView?.convert(event.locationInWindow, from: nil) ?? event.locationInWindow
+            let hitView = window.contentView?.hitTest(clickLocation)
+
+            if !isTextInputView(hitView) {
+                clearInputFocus()
+            }
+
+            return event
+        }
+
+        localKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if event.keyCode == 53 {
+                handleEscapeAction()
+                return nil
+            }
+            return event
+        }
+    }
+
+    private func removeFocusEventMonitors() {
+        if let localMouseMonitor {
+            NSEvent.removeMonitor(localMouseMonitor)
+            self.localMouseMonitor = nil
+        }
+
+        if let localKeyMonitor {
+            NSEvent.removeMonitor(localKeyMonitor)
+            self.localKeyMonitor = nil
+        }
+    }
+
+    private func isTextInputView(_ view: NSView?) -> Bool {
+        var current = view
+
+        while let inspectedView = current {
+            if inspectedView is NSTextField || inspectedView is NSTextView {
+                return true
+            }
+            current = inspectedView.superview
+        }
+
+        return false
     }
 
     private func addTodo() {
@@ -196,6 +271,7 @@ struct AddTaskInputView: View {
     @Binding var notes: String
     @FocusState.Binding var focusedField: MenuBarFocusField?
     let onAdd: () -> Void
+    var onEscape: (() -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -221,7 +297,7 @@ struct AddTaskInputView: View {
             }
 
             VStack(alignment: .trailing, spacing: 7) {
-                NSTextFieldWrapper(text: $notes, placeholder: "Notes (optional)", isMultiline: false, onSubmit: onAdd)
+                NSTextFieldWrapper(text: $notes, placeholder: "Notes (optional)", isMultiline: false, onSubmit: onAdd, onEscape: onEscape)
                     .frame(height: 22)
                     .padding(.bottom, notes.count > 255 ? 3 : 0)
                 
@@ -247,6 +323,7 @@ struct NSTextFieldWrapper: NSViewRepresentable {
     let placeholder: String
     var isMultiline: Bool = false
     var onSubmit: (() -> Void)?
+    var onEscape: (() -> Void)?
 
     func makeNSView(context: Context) -> NSTextField {
         let textField = NSTextField()
@@ -273,16 +350,18 @@ struct NSTextFieldWrapper: NSViewRepresentable {
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(text: $text, onSubmit: onSubmit)
+        Coordinator(text: $text, onSubmit: onSubmit, onEscape: onEscape)
     }
 
     class Coordinator: NSObject, NSTextFieldDelegate {
         @Binding var text: String
         let onSubmit: (() -> Void)?
+        let onEscape: (() -> Void)?
 
-        init(text: Binding<String>, onSubmit: (() -> Void)?) {
+        init(text: Binding<String>, onSubmit: (() -> Void)?, onEscape: (() -> Void)?) {
             _text = text
             self.onSubmit = onSubmit
+            self.onEscape = onEscape
         }
 
         @objc func textDidChange(_ sender: NSTextField) {
@@ -301,6 +380,12 @@ struct NSTextFieldWrapper: NSViewRepresentable {
                 onSubmit?()
                 return true
             }
+
+            if commandSelector == #selector(NSResponder.cancelOperation(_:)) {
+                onEscape?()
+                return false
+            }
+
             return false
         }
     }
